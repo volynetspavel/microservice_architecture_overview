@@ -2,50 +2,64 @@ package com.microservice.resource.controller;
 
 import com.microservice.resource.dto.DeleteResourcesResponseDto;
 import com.microservice.resource.dto.ResourceDataResponseDto;
-import com.microservice.resource.dto.ResourceResponseDto;
+import com.microservice.resource.dto.ResourceIdResponseDto;
 import com.microservice.resource.service.ResourceService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
-
+/**
+ * REST controller for managing MP3 resources.
+ * Handles HTTP requests for resource upload, retrieval, and deletion.
+ */
 @RestController
 @RequestMapping("/resources")
 public class ResourceController {
-    @Autowired
-    private ResourceService resourceService;
+
+    private final ResourceService resourceService;
+
+    public ResourceController(ResourceService resourceService) {
+        this.resourceService = resourceService;
+    }
 
     /**
      * Uploads a new MP3 resource.
+     *
+     * @param audioData Binary MP3 audio data
+     * @return ResponseEntity with resource ID and 200 OK status
      */
     @PostMapping(consumes = "audio/mpeg", produces = "application/json")
-    public ResponseEntity<ResourceResponseDto> uploadResource(@RequestBody byte[] audioData) {
-        ResourceResponseDto resourceId = resourceService.uploadResource(audioData);
-        return ResponseEntity.ok(resourceId);
+    public ResponseEntity<ResourceIdResponseDto> uploadResource(@RequestBody byte[] audioData) {
+        ResourceIdResponseDto resourceId = resourceService.uploadResource(audioData);
+        return ResponseEntity.status(HttpStatus.OK).body(resourceId);
     }
 
     /**
      * Retrieves the binary audio data of a resource.
+     *
+     * @param id The ID of the resource to retrieve
+     * @return ResponseEntity with audio bytes and appropriate status code
      */
     @GetMapping(value = "/{id}", produces = "audio/mpeg")
-    public ResponseEntity<ResourceDataResponseDto> getResourceById(@PathVariable Long id) {
+    public ResponseEntity<byte[]> getResourceById(@PathVariable Long id) {
         ResourceDataResponseDto data = resourceService.getResourceById(id);
         return ResponseEntity.ok()
                 .contentType(MediaType.valueOf("audio/mpeg"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"resource_" + id + ".mp3\"")
-                .body(data);
+                .body(data.getAudioData());
     }
 
     /**
      * Deletes specified resources by their IDs.
+     *
+     * @param ids Comma-separated list of resource IDs to remove
+     * @return ResponseEntity with IDs of deleted resources and 200 OK status
      */
     @DeleteMapping
     public ResponseEntity<DeleteResourcesResponseDto> deleteResources(@RequestParam String ids) {
-        DeleteResourcesResponseDto deleteResources = resourceService.deleteResources(ids);
-        return ResponseEntity.ok().body(deleteResources);
+        DeleteResourcesResponseDto deletedResources = resourceService.deleteResources(ids);
+        return ResponseEntity.ok().body(deletedResources);
     }
 }

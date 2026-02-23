@@ -2,27 +2,36 @@ package com.microservice.resource.service;
 
 import com.microservice.resource.dto.DeleteResourcesResponseDto;
 import com.microservice.resource.dto.ResourceDataResponseDto;
-import com.microservice.resource.dto.ResourceResponseDto;
+import com.microservice.resource.dto.ResourceIdResponseDto;
 import com.microservice.resource.entity.Resource;
 import com.microservice.resource.exception.InvalidRequestException;
 import com.microservice.resource.exception.ResourceNotFoundException;
 import com.microservice.resource.repository.ResourceRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service for handling MP3 resource CRUD operations.
  */
+@Slf4j
 @Service
 public class ResourceService {
 
     private final ResourceRepository repository;
+    private final Mp3MetadataExtractorService metadataExtractor;
+    private final SongServiceClient songServiceClient;
 
-    public ResourceService(ResourceRepository repository) {
+    public ResourceService(ResourceRepository repository,
+                          Mp3MetadataExtractorService metadataExtractor,
+                          SongServiceClient songServiceClient) {
         this.repository = repository;
+        this.metadataExtractor = metadataExtractor;
+        this.songServiceClient = songServiceClient;
     }
 
     /**
@@ -31,17 +40,29 @@ public class ResourceService {
      * @param audioData Binary MP3 data.
      * @return DTO containing the ID of the created resource.
      */
-    public ResourceResponseDto uploadResource(byte[] audioData) {
+    public ResourceIdResponseDto uploadResource(byte[] audioData) {
         if (audioData == null || audioData.length == 0) {
             throw new InvalidRequestException("MP3 file is empty");
         }
 
+        // Save resource to database
         Resource resource = repository.save(new Resource(audioData));
+        log.info("Resource with ID={} saved successfully", resource.getId());
 
-//        Mp3Metadata metadata = extractMetadata(data);
-//        songServiceClient.saveMetadata(metadata);
+        try {
+            // Extract metadata from MP3 file
+            Map<String, String> metadata = metadataExtractor.extractMetadata(audioData);
+            log.info("Metadata extracted for resource ID={}", resource.getId());
 
-        return new ResourceResponseDto(resource.getId());
+            // Send metadata to Song Service
+            songServiceClient.sendMetadata(metadata);
+            log.info("Metadata sent to Song Service for resource ID={}", resource.getId());
+        } catch (Exception e) {
+            // Log error but don't fail the upload - resource is already saved
+            log.error("Error processing metadata for resource ID={}: {}", resource.getId(), e.getMessage());
+        }
+
+        return new ResourceIdResponseDto(resource.getId());
     }
 
     /**
@@ -64,27 +85,66 @@ public class ResourceService {
      * @return DTO containing the IDs of successfully deleted resources.
      */
     public DeleteResourcesResponseDto deleteResources(String resourceIds) {
-        if (resourceIds.length() > 200) throw new InvalidRequestException("CSV string too long");
+        validateCsvLength(resourceIds);
+        validateCsvFormat(resourceIds);
 
-        List<Long> ids;
-        try {
-            ids = Arrays.stream(resourceIds.split(","))
-                    .map(String::trim)
-                    .map(Long::parseLong)
-                    .toList();
-        } catch (NumberFormatException e) {
-            throw new InvalidRequestException("Invalid ids in the provided CSV string");
-        }
+        List<Long> ids = parseCsvIds(resourceIds);
 
         List<Long> deletedIds = new ArrayList<>();
         for (Long id : ids) {
             if (repository.existsById(id)) {
                 repository.deleteById(id);
                 deletedIds.add(id);
+                log.info("Resource with ID={} deleted successfully", id);
             }
         }
 
         return new DeleteResourcesResponseDto(deletedIds);
+    }
+
+    /**
+     * Validates if the CSV string length is within acceptable limits.
+     *
+     * @param resourceIds CSV string of IDs.
+     * @throws InvalidRequestException if CSV string is too long.
+     */
+    private void validateCsvLength(String resourceIds) {
+        if (resourceIds == null || resourceIds.isEmpty()) {
+            throw new InvalidRequestException("CSV string cannot be empty");
+        }
+        if (resourceIds.length() > 200) {
+            throw new InvalidRequestException("CSV string length must be less than 200 characters");
+        }
+    }
+
+    /**
+     * Validates CSV format.
+     *
+     * @param resourceIds CSV string of IDs.
+     * @throws InvalidRequestException if CSV format is invalid.
+     */
+    private void validateCsvFormat(String resourceIds) {
+        if (!resourceIds.matches("^\\d+(?:,\\s*\\d+)*$")) {
+            throw new InvalidRequestException("Invalid CSV format. Expected comma-separated list of positive integers");
+        }
+    }
+
+    /**
+     * Parses comma-separated string of IDs into a list of Longs.
+     *
+     * @param resourceIds CSV string of IDs.
+     * @return List of parsed IDs.
+     * @throws InvalidRequestException if IDs cannot be parsed.
+     */
+    private List<Long> parseCsvIds(String resourceIds) {
+        try {
+            return Arrays.stream(resourceIds.split(","))
+                    .map(String::trim)
+                    .map(Long::parseLong)
+                    .toList();
+        } catch (NumberFormatException e) {
+            throw new InvalidRequestException("Invalid IDs in the provided CSV string");
+        }
     }
 
     /**
@@ -94,7 +154,7 @@ public class ResourceService {
      * @throws InvalidRequestException if ID is invalid.
      */
     private void validateResourceId(Long id) {
-        if (id == null || id <= 0 || !String.valueOf(id).matches("^\\d+$")) {
+        if (id == null || id <= 0) {
             throw new InvalidRequestException("Invalid resource ID: " + id);
         }
     }

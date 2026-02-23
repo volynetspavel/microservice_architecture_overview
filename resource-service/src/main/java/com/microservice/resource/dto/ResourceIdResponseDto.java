@@ -8,10 +8,10 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ResourceResponseDto {
+public class ResourceIdResponseDto {
     private Long id;
 
-    public ResourceResponseDto(Long id) {
+    public ResourceIdResponseDto(Long id) {
         this.id = id;
     }
 }
