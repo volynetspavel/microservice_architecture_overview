@@ -51,7 +51,7 @@ public class ResourceService {
         validateResourceId(id);
         return repository.findById(id)
                 .map(Resource::getAudioData)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource with ID=" + id + " not found"));
     }
 
     /**
