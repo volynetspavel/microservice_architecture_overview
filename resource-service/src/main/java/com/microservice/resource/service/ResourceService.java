@@ -1,14 +1,17 @@
 package com.microservice.resource.service;
 
+import com.microservice.resource.dto.DeleteResourcesResponseDto;
+import com.microservice.resource.dto.ResourceDataResponseDto;
+import com.microservice.resource.dto.ResourceResponseDto;
 import com.microservice.resource.entity.Resource;
 import com.microservice.resource.exception.InvalidRequestException;
 import com.microservice.resource.exception.ResourceNotFoundException;
 import com.microservice.resource.repository.ResourceRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Service for handling MP3 resource CRUD operations.
@@ -26,9 +29,9 @@ public class ResourceService {
      * Uploads an MP3 file, extracts metadata, and stores it.
      *
      * @param audioData Binary MP3 data.
-     * @return ID of the created resource.
+     * @return DTO containing the ID of the created resource.
      */
-    public Long uploadResource(byte[] audioData) {
+    public ResourceResponseDto uploadResource(byte[] audioData) {
         if (audioData == null || audioData.length == 0) {
             throw new InvalidRequestException("MP3 file is empty");
         }
@@ -38,7 +41,7 @@ public class ResourceService {
 //        Mp3Metadata metadata = extractMetadata(data);
 //        songServiceClient.saveMetadata(metadata);
 
-        return resource.getId();
+        return new ResourceResponseDto(resource.getId());
     }
 
     /**
@@ -47,19 +50,20 @@ public class ResourceService {
      * @param id Resource ID.
      * @return Binary MP3 data.
      */
-    public byte[] getResourceById(Long id) {
+    public ResourceDataResponseDto getResourceById(Long id) {
         validateResourceId(id);
         return repository.findById(id)
-                .map(Resource::getAudioData)
+                .map(resource -> new ResourceDataResponseDto(resource.getAudioData()))
                 .orElseThrow(() -> new ResourceNotFoundException("Resource with ID=" + id + " not found"));
     }
 
     /**
      * Deletes resources by IDs.
      *
-     * @return List of successfully deleted IDs.
+     * @param resourceIds Comma-separated string of resource IDs to delete.
+     * @return DTO containing the IDs of successfully deleted resources.
      */
-    public List<Long> deleteResources(String resourceIds) {
+    public DeleteResourcesResponseDto deleteResources(String resourceIds) {
         if (resourceIds.length() > 200) throw new InvalidRequestException("CSV string too long");
 
         List<Long> ids;
@@ -72,10 +76,15 @@ public class ResourceService {
             throw new InvalidRequestException("Invalid ids in the provided CSV string");
         }
 
-        return ids.stream()
-                .filter(repository::existsById)
-                .peek(repository::deleteById)
-                .collect(Collectors.toList());
+        List<Long> deletedIds = new ArrayList<>();
+        for (Long id : ids) {
+            if (repository.existsById(id)) {
+                repository.deleteById(id);
+                deletedIds.add(id);
+            }
+        }
+
+        return new DeleteResourcesResponseDto(deletedIds);
     }
 
     /**
