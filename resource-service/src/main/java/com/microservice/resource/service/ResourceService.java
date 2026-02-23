@@ -23,11 +23,11 @@ import java.util.Map;
 public class ResourceService {
 
     private final ResourceRepository repository;
-    private final Mp3MetadataExtractorService metadataExtractor;
+    private final Mp3MetadataExtractor metadataExtractor;
     private final SongServiceClient songServiceClient;
 
     public ResourceService(ResourceRepository repository,
-                          Mp3MetadataExtractorService metadataExtractor,
+                          Mp3MetadataExtractor metadataExtractor,
                           SongServiceClient songServiceClient) {
         this.repository = repository;
         this.metadataExtractor = metadataExtractor;
