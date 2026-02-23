@@ -1,10 +1,10 @@
-package com.microservice.resource.dto;
+package com.microservice.song.dto;
 
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * DTO for sending error responses to clients.
+ * DTO for error responses.
  */
 @Getter
 @Setter
@@ -17,3 +17,4 @@ public class ErrorResponseDto {
         this.message = message;
     }
 }
+
