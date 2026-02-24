@@ -28,19 +28,31 @@ public class SongServiceClient {
      * Sends extracted MP3 metadata to Song Service.
      *
      * @param metadata Map of extracted metadata.
-     * @return true if metadata was successfully sent.
      */
-    public boolean sendMetadata(Map<String, String> metadata) {
+    public void sendMetadata(Map<String, String> metadata) {
         try {
             String url = songServiceUrl + "/songs";
 
             restTemplate.postForObject(url, metadata, Void.class);
             log.info("Metadata successfully sent to Song Service");
-            return true;
         } catch (RestClientException e) {
             log.error("Failed to send metadata to Song Service: {}", e.getMessage());
-            return false;
         }
+    }
+
+    /**
+     * Deletes metadata from Song Service by resource ID.
+     * @param id The ID of the metadata to delete.
+     */
+    public void deleteMetadata(Long id) {
+        try {
+                String url = songServiceUrl + "/songs?id=" + id;
+
+                restTemplate.delete(url);
+                log.info("Metadata with ID={} successfully deleted from Song Service", id);
+            } catch (RestClientException e) {
+                log.error("Failed to delete metadata from Song Service: {}", e.getMessage());
+            }
     }
 }
 

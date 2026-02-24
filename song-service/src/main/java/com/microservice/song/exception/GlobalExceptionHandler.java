@@ -15,25 +15,25 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SongNotFoundException.class)
     public ResponseEntity<ErrorResponseDto> handleNotFound(SongNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponseDto(HttpStatus.NOT_FOUND.toString(), ex.getMessage()));
+                .body(new ErrorResponseDto(HttpStatus.NOT_FOUND.value(), ex.getMessage()));
     }
 
     @ExceptionHandler(InvalidRequestException.class)
     public ResponseEntity<ErrorResponseDto> handleBadRequest(InvalidRequestException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponseDto(HttpStatus.BAD_REQUEST.toString(), ex.getMessage()));
+                .body(new ErrorResponseDto(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
     }
 
     @ExceptionHandler(SongAlreadyExistsException.class)
     public ResponseEntity<ErrorResponseDto> handleConflict(SongAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ErrorResponseDto(HttpStatus.CONFLICT.toString(), ex.getMessage()));
+                .body(new ErrorResponseDto(HttpStatus.CONFLICT.value(), ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleServerError(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponseDto(HttpStatus.INTERNAL_SERVER_ERROR.toString(), "An unexpected error occurred"));
+                .body(new ErrorResponseDto(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage()));
     }
 }
 

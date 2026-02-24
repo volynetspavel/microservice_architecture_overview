@@ -46,12 +46,12 @@ public class SongController {
     /**
      * Deletes specified song metadata records by their IDs.
      *
-     * @param ids Comma-separated list of song IDs to delete.
+     * @param id Comma-separated list of song IDs to delete.
      * @return ResponseEntity with the IDs of successfully deleted songs.
      */
     @DeleteMapping
-    public ResponseEntity<DeleteSongsResponseDto> deleteSongs(@RequestParam String ids) {
-        DeleteSongsResponseDto response = songService.deleteSongs(ids);
+    public ResponseEntity<DeleteSongsResponseDto> deleteSongs(@RequestParam String id) {
+        DeleteSongsResponseDto response = songService.deleteSongs(id);
         return ResponseEntity.ok(response);
     }
 }

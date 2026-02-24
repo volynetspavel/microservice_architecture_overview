@@ -51,7 +51,7 @@ public class ResourceService {
 
         try {
             // Extract metadata from MP3 file
-            Map<String, String> metadata = metadataExtractor.extractMetadata(audioData);
+            Map<String, String> metadata = metadataExtractor.extractMetadata(resource.getId(), audioData);
             log.info("Metadata extracted for resource ID={}", resource.getId());
 
             // Send metadata to Song Service
@@ -94,6 +94,7 @@ public class ResourceService {
         for (Long id : ids) {
             if (repository.existsById(id)) {
                 repository.deleteById(id);
+                songServiceClient.deleteMetadata(id);
                 deletedIds.add(id);
                 log.info("Resource with ID={} deleted successfully", id);
             }

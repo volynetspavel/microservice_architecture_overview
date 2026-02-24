@@ -69,7 +69,7 @@ public class SongService {
 
         Optional<Song> song = repository.findById(id);
         if (song.isEmpty()) {
-            throw new SongNotFoundException("Song metadata with the specified ID does not exist");
+            throw new SongNotFoundException("Resource with ID=" + id + " not found");
         }
 
         Song s = song.get();
@@ -109,30 +109,30 @@ public class SongService {
         }
 
         if (requestDto.getId() == null || requestDto.getId() <= 0) {
-            throw new InvalidRequestException("id: Numeric, must match an existing Resource ID");
+            throw new InvalidRequestException("Invalid id=" + requestDto.getId() + ": Numeric, must match an existing Resource ID");
         }
 
         if (requestDto.getName() == null || requestDto.getName().trim().isEmpty() ||
                 requestDto.getName().isEmpty() || requestDto.getName().length() > 100) {
-            throw new InvalidRequestException("name: 1-100 characters text");
+            throw new InvalidRequestException("Invalid name='" + requestDto.getName() + "': 1-100 characters text");
         }
 
         if (requestDto.getArtist() == null || requestDto.getArtist().trim().isEmpty() ||
                 requestDto.getArtist().isEmpty() || requestDto.getArtist().length() > 100) {
-            throw new InvalidRequestException("artist: 1-100 characters text");
+            throw new InvalidRequestException("Invalid artist='" + requestDto.getArtist() + "': 1-100 characters text");
         }
 
         if (requestDto.getAlbum() == null || requestDto.getAlbum().trim().isEmpty() ||
                 requestDto.getAlbum().isEmpty() || requestDto.getAlbum().length() > 100) {
-            throw new InvalidRequestException("album: 1-100 characters text");
+            throw new InvalidRequestException("Invalid album='" + requestDto.getAlbum() + "': 1-100 characters text");
         }
 
         if (requestDto.getDuration() == null || !DURATION_PATTERN.matcher(requestDto.getDuration()).matches()) {
-            throw new InvalidRequestException("duration: Format mm:ss, with leading zeros");
+            throw new InvalidRequestException("Invalid duration='" + requestDto.getDuration() + "': Format mm:ss, with leading zeros");
         }
 
         if (requestDto.getYear() == null || !isValidYear(requestDto.getYear())) {
-            throw new InvalidRequestException("year: YYYY format between 1900-2099");
+            throw new InvalidRequestException("Invalid year='" + requestDto.getYear() + "': YYYY format between 1900-2099");
         }
     }
 

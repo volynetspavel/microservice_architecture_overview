@@ -54,12 +54,12 @@ public class ResourceController {
     /**
      * Deletes specified resources by their IDs.
      *
-     * @param ids Comma-separated list of resource IDs to remove
+     * @param id Comma-separated list of resource IDs to remove
      * @return ResponseEntity with IDs of deleted resources and 200 OK status
      */
     @DeleteMapping
-    public ResponseEntity<DeleteResourcesResponseDto> deleteResources(@RequestParam String ids) {
-        DeleteResourcesResponseDto deletedResources = resourceService.deleteResources(ids);
+    public ResponseEntity<DeleteResourcesResponseDto> deleteResources(@RequestParam String id) {
+        DeleteResourcesResponseDto deletedResources = resourceService.deleteResources(id);
         return ResponseEntity.ok().body(deletedResources);
     }
 }

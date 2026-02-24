@@ -2,6 +2,7 @@ package com.microservice.resource.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.mp3.Mp3Parser;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,7 @@ public class Mp3MetadataExtractor {
      * @param audioData Binary MP3 data.
      * @return Map of extracted metadata.
      */
-    public Map<String, String> extractMetadata(byte[] audioData) {
+    public Map<String, String> extractMetadata(long id, byte[] audioData) {
         Map<String, String> extractedMetadata = new HashMap<>();
 
         try {
@@ -42,7 +43,8 @@ public class Mp3MetadataExtractor {
             parser.parse(stream, handler, metadata, context);
 
             // Extract common metadata fields
-            extractedMetadata.put("title", getMetadataValue(metadata, "title", "Unknown"));
+            extractedMetadata.put("id", String.valueOf(id));
+            extractedMetadata.put("name", getMetadataValue(metadata, "dc:title", "Unknown"));
             extractedMetadata.put("artist", getMetadataValue(metadata, "xmpDM:artist", "Unknown"));
             extractedMetadata.put("album", getMetadataValue(metadata, "xmpDM:album", "Unknown"));
             extractedMetadata.put("duration", convertDuration(getMetadataValue(metadata, "xmpDM:duration", "0")));

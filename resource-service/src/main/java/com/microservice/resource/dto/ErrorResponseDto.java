@@ -9,11 +9,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ErrorResponseDto {
-    private String status;
-    private String message;
+    private int errorCode;
+    private String errorMessage;
 
-    public ErrorResponseDto(String status, String message) {
-        this.status = status;
-        this.message = message;
+    public ErrorResponseDto(int errorCode, String errorMessage) {
+        this.errorCode = errorCode;
+        this.errorMessage = errorMessage;
     }
 }
