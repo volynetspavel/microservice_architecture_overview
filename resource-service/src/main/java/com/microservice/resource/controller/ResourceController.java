@@ -43,7 +43,7 @@ public class ResourceController {
      * @return ResponseEntity with audio bytes and appropriate status code
      */
     @GetMapping(value = "/{id}", produces = "audio/mpeg")
-    public ResponseEntity<byte[]> getResourceById(@PathVariable Long id) {
+    public ResponseEntity<byte[]> getResourceById(@PathVariable String id) {
         ResourceDataResponseDto data = resourceService.getResourceById(id);
         return ResponseEntity.ok()
                 .contentType(MediaType.valueOf("audio/mpeg"))

@@ -64,10 +64,10 @@ public class SongService {
      * @param id The ID of the song.
      * @return DTO containing the song metadata.
      */
-    public SongResponseDto getSongById(Long id) {
-        validateId(id);
+    public SongResponseDto getSongById(String id) {
+        long validatedId = validateId(id);
 
-        Optional<Song> song = repository.findById(id);
+        Optional<Song> song = repository.findById(validatedId);
         if (song.isEmpty()) {
             throw new SongNotFoundException("Resource with ID=" + id + " not found");
         }
@@ -141,9 +141,16 @@ public class SongService {
      *
      * @param id The ID to validate.
      */
-    private void validateId(Long id) {
-        if (id == null || id <= 0) {
-            throw new InvalidRequestException("The provided ID is invalid (e.g., contains letters, decimals, is negative, or zero)");
+    private long validateId(String id) {
+        long parsedId;
+        try {
+            parsedId = Long.parseLong(id);
+            if (parsedId <= 0) {
+                throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive long");
+            }
+            return parsedId;
+        } catch (NumberFormatException e) {
+            throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive long");
         }
     }
 

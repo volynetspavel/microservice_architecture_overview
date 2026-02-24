@@ -27,8 +27,8 @@ public class ResourceService {
     private final SongServiceClient songServiceClient;
 
     public ResourceService(ResourceRepository repository,
-                          Mp3MetadataExtractor metadataExtractor,
-                          SongServiceClient songServiceClient) {
+                           Mp3MetadataExtractor metadataExtractor,
+                           SongServiceClient songServiceClient) {
         this.repository = repository;
         this.metadataExtractor = metadataExtractor;
         this.songServiceClient = songServiceClient;
@@ -71,9 +71,9 @@ public class ResourceService {
      * @param id Resource ID.
      * @return Binary MP3 data.
      */
-    public ResourceDataResponseDto getResourceById(Long id) {
-        validateResourceId(id);
-        return repository.findById(id)
+    public ResourceDataResponseDto getResourceById(String id) {
+        long validatedId = validateResourceId(id);
+        return repository.findById(validatedId)
                 .map(resource -> new ResourceDataResponseDto(resource.getAudioData()))
                 .orElseThrow(() -> new ResourceNotFoundException("Resource with ID=" + id + " not found"));
     }
@@ -86,8 +86,6 @@ public class ResourceService {
      */
     public DeleteResourcesResponseDto deleteResources(String resourceIds) {
         validateCsvLength(resourceIds);
-        validateCsvFormat(resourceIds);
-
         List<Long> ids = parseCsvIds(resourceIds);
 
         List<Long> deletedIds = new ArrayList<>();
@@ -114,19 +112,7 @@ public class ResourceService {
             throw new InvalidRequestException("CSV string cannot be empty");
         }
         if (resourceIds.length() > 200) {
-            throw new InvalidRequestException("CSV string length must be less than 200 characters");
-        }
-    }
-
-    /**
-     * Validates CSV format.
-     *
-     * @param resourceIds CSV string of IDs.
-     * @throws InvalidRequestException if CSV format is invalid.
-     */
-    private void validateCsvFormat(String resourceIds) {
-        if (!resourceIds.matches("^\\d+(?:,\\s*\\d+)*$")) {
-            throw new InvalidRequestException("Invalid CSV format. Expected comma-separated list of positive integers");
+            throw new InvalidRequestException("CSV string is too long: received " + resourceIds.length() + " characters, maximum allowed is 200");
         }
     }
 
@@ -138,13 +124,29 @@ public class ResourceService {
      * @throws InvalidRequestException if IDs cannot be parsed.
      */
     private List<Long> parseCsvIds(String resourceIds) {
+        List<String> stringIds = Arrays.stream(resourceIds.split(","))
+                .map(String::trim)
+                .toList();
+
         try {
-            return Arrays.stream(resourceIds.split(","))
-                    .map(String::trim)
+            return stringIds.stream()
+                    .peek(this::validateCsvFormat)
                     .map(Long::parseLong)
                     .toList();
         } catch (NumberFormatException e) {
             throw new InvalidRequestException("Invalid IDs in the provided CSV string");
+        }
+    }
+
+    /**
+     * Validates CSV format.
+     *
+     * @param resourceIds CSV string of IDs.
+     * @throws InvalidRequestException if CSV format is invalid.
+     */
+    private void validateCsvFormat(String resourceIds) {
+        if (!resourceIds.matches("^\\d+(?:,\\s*\\d+)*$")) {
+            throw new InvalidRequestException("Invalid ID format: '" + resourceIds + "'. Only positive longs are allowed");
         }
     }
 
@@ -154,9 +156,16 @@ public class ResourceService {
      * @param id Resource ID to validate.
      * @throws InvalidRequestException if ID is invalid.
      */
-    private void validateResourceId(Long id) {
-        if (id == null || id <= 0) {
-            throw new InvalidRequestException("Invalid resource ID: " + id);
+    private long validateResourceId(String id) {
+        long parsedId;
+        try {
+            parsedId = Long.parseLong(id);
+            if (parsedId <= 0) {
+                throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive long");
+            }
+            return parsedId;
+        } catch (NumberFormatException e) {
+            throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive long");
         }
     }
 }
