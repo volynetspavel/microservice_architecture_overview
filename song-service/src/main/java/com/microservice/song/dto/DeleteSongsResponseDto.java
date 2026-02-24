@@ -11,9 +11,9 @@ import java.util.List;
 @Getter
 @Setter
 public class DeleteSongsResponseDto {
-    private List<Long> ids;
+    private List<Integer> ids;
 
-    public DeleteSongsResponseDto(List<Long> ids) {
+    public DeleteSongsResponseDto(List<Integer> ids) {
         this.ids = ids;
     }
 }

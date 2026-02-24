@@ -65,11 +65,11 @@ public class SongService {
      * @return DTO containing the song metadata.
      */
     public SongResponseDto getSongById(String id) {
-        long validatedId = validateId(id);
+        int validatedId = validateId(id);
 
         Optional<Song> song = repository.findById(validatedId);
         if (song.isEmpty()) {
-            throw new SongNotFoundException("Resource with ID=" + id + " not found");
+            throw new SongNotFoundException("Song metadata for ID=" + id + " not found");
         }
 
         Song s = song.get();
@@ -85,10 +85,10 @@ public class SongService {
     public DeleteSongsResponseDto deleteSongs(String ids) {
         validateCsvFormat(ids);
 
-        List<Long> idList = parseAndValidateIds(ids);
-        List<Long> deletedIds = new ArrayList<>();
+        List<Integer> idList = parseAndValidateIds(ids);
+        List<Integer> deletedIds = new ArrayList<>();
 
-        for (Long id : idList) {
+        for (Integer id : idList) {
             if (repository.existsById(id)) {
                 repository.deleteById(id);
                 deletedIds.add(id);
@@ -108,7 +108,7 @@ public class SongService {
             throw new InvalidRequestException("Song metadata is missing");
         }
 
-        if (requestDto.getId() == null || requestDto.getId() <= 0) {
+        if (requestDto.getId() <= 0) {
             throw new InvalidRequestException("Invalid id=" + requestDto.getId() + ": Numeric, must match an existing Resource ID");
         }
 
@@ -141,10 +141,10 @@ public class SongService {
      *
      * @param id The ID to validate.
      */
-    private long validateId(String id) {
-        long parsedId;
+    private int validateId(String id) {
+        int parsedId;
         try {
-            parsedId = Long.parseLong(id);
+            parsedId = Integer.parseInt(id);
             if (parsedId <= 0) {
                 throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive long");
             }
@@ -175,13 +175,13 @@ public class SongService {
      * @param ids Comma-separated list of IDs.
      * @return List of parsed IDs.
      */
-    private List<Long> parseAndValidateIds(String ids) {
-        List<Long> idList = new ArrayList<>();
+    private List<Integer> parseAndValidateIds(String ids) {
+        List<Integer> idList = new ArrayList<>();
         String[] idStrings = ids.split(",");
 
         for (String idStr : idStrings) {
             try {
-                Long id = Long.parseLong(idStr.trim());
+                int id = Integer.parseInt(idStr.trim());
                 if (id <= 0) {
                     throw new InvalidRequestException("CSV string format is invalid or exceeds length restrictions");
                 }

@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SongCreateRequestDto {
-    private Long id;
+    private int id;
     private String name;
     private String artist;
     private String album;

@@ -15,7 +15,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Song {
     @Id
-    private Long id;
+    private int id;
 
     private String name;
     private String artist;
@@ -23,7 +23,7 @@ public class Song {
     private String duration;
     private String year;
 
-    public Song(Long id, String name, String artist, String album, String duration, String year) {
+    public Song(int id, String name, String artist, String album, String duration, String year) {
         this.id = id;
         this.name = name;
         this.artist = artist;

@@ -72,7 +72,7 @@ public class ResourceService {
      * @return Binary MP3 data.
      */
     public ResourceDataResponseDto getResourceById(String id) {
-        long validatedId = validateResourceId(id);
+        int validatedId = validateResourceId(id);
         return repository.findById(validatedId)
                 .map(resource -> new ResourceDataResponseDto(resource.getAudioData()))
                 .orElseThrow(() -> new ResourceNotFoundException("Resource with ID=" + id + " not found"));
@@ -86,10 +86,10 @@ public class ResourceService {
      */
     public DeleteResourcesResponseDto deleteResources(String resourceIds) {
         validateCsvLength(resourceIds);
-        List<Long> ids = parseCsvIds(resourceIds);
+        List<Integer> ids = parseCsvIds(resourceIds);
 
-        List<Long> deletedIds = new ArrayList<>();
-        for (Long id : ids) {
+        List<Integer> deletedIds = new ArrayList<>();
+        for (Integer id : ids) {
             if (repository.existsById(id)) {
                 repository.deleteById(id);
                 songServiceClient.deleteMetadata(id);
@@ -123,7 +123,7 @@ public class ResourceService {
      * @return List of parsed IDs.
      * @throws InvalidRequestException if IDs cannot be parsed.
      */
-    private List<Long> parseCsvIds(String resourceIds) {
+    private List<Integer> parseCsvIds(String resourceIds) {
         List<String> stringIds = Arrays.stream(resourceIds.split(","))
                 .map(String::trim)
                 .toList();
@@ -131,7 +131,7 @@ public class ResourceService {
         try {
             return stringIds.stream()
                     .peek(this::validateCsvFormat)
-                    .map(Long::parseLong)
+                    .map(Integer::parseInt)
                     .toList();
         } catch (NumberFormatException e) {
             throw new InvalidRequestException("Invalid IDs in the provided CSV string");
@@ -146,7 +146,7 @@ public class ResourceService {
      */
     private void validateCsvFormat(String resourceIds) {
         if (!resourceIds.matches("^\\d+(?:,\\s*\\d+)*$")) {
-            throw new InvalidRequestException("Invalid ID format: '" + resourceIds + "'. Only positive longs are allowed");
+            throw new InvalidRequestException("Invalid ID format: '" + resourceIds + "'. Only positive integers are allowed");
         }
     }
 
@@ -156,16 +156,16 @@ public class ResourceService {
      * @param id Resource ID to validate.
      * @throws InvalidRequestException if ID is invalid.
      */
-    private long validateResourceId(String id) {
-        long parsedId;
+    private int validateResourceId(String id) {
+        int parsedId;
         try {
-            parsedId = Long.parseLong(id);
+            parsedId = Integer.parseInt(id);
             if (parsedId <= 0) {
-                throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive long");
+                throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive integer");
             }
             return parsedId;
         } catch (NumberFormatException e) {
-            throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive long");
+            throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive integer");
         }
     }
 }

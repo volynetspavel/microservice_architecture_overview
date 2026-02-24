@@ -42,17 +42,18 @@ public class SongServiceClient {
 
     /**
      * Deletes metadata from Song Service by resource ID.
+     *
      * @param id The ID of the metadata to delete.
      */
-    public void deleteMetadata(Long id) {
+    public void deleteMetadata(Integer id) {
         try {
-                String url = songServiceUrl + "/songs?id=" + id;
+            String url = songServiceUrl + "/songs?id=" + id;
 
-                restTemplate.delete(url);
-                log.info("Metadata with ID={} successfully deleted from Song Service", id);
-            } catch (RestClientException e) {
-                log.error("Failed to delete metadata from Song Service: {}", e.getMessage());
-            }
+            restTemplate.delete(url);
+            log.info("Metadata with ID={} successfully deleted from Song Service", id);
+        } catch (RestClientException e) {
+            log.error("Failed to delete metadata from Song Service: {}", e.getMessage());
+        }
     }
 }
 

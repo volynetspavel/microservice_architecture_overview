@@ -9,9 +9,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SongIdResponseDto {
-    private Long id;
+    private int id;
 
-    public SongIdResponseDto(Long id) {
+    public SongIdResponseDto(int id) {
         this.id = id;
     }
 }

@@ -11,14 +11,14 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class SongResponseDto {
-    private Long id;
+    private int id;
     private String name;
     private String artist;
     private String album;
     private String duration;
     private String year;
 
-    public SongResponseDto(Long id, String name, String artist, String album, String duration, String year) {
+    public SongResponseDto(int id, String name, String artist, String album, String duration, String year) {
         this.id = id;
         this.name = name;
         this.artist = artist;

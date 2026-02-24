@@ -9,9 +9,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ResourceIdResponseDto {
-    private Long id;
+    private int id;
 
-    public ResourceIdResponseDto(Long id) {
+    public ResourceIdResponseDto(int id) {
         this.id = id;
     }
 }

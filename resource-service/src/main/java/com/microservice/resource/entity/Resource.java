@@ -18,7 +18,7 @@ import lombok.Setter;
 public class Resource {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(name = "audio_data", nullable = false, columnDefinition = "BYTEA")
     private byte[] audioData;
