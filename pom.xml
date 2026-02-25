@@ -66,6 +66,10 @@
             <artifactId>tika-parsers-standard-package</artifactId>
             <version>3.2.3</version>
         </dependency>
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

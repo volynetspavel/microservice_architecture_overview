@@ -5,6 +5,7 @@ import com.microservice.song.dto.SongCreateRequestDto;
 import com.microservice.song.dto.SongIdResponseDto;
 import com.microservice.song.dto.SongResponseDto;
 import com.microservice.song.service.SongService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,7 @@ public class SongController {
      * @return ResponseEntity with the ID of the created song.
      */
     @PostMapping
-    public ResponseEntity<SongIdResponseDto> createSong(@RequestBody SongCreateRequestDto requestDto) {
+    public ResponseEntity<SongIdResponseDto> createSong(@RequestBody @Valid SongCreateRequestDto requestDto) {
         SongIdResponseDto response = songService.createSong(requestDto);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

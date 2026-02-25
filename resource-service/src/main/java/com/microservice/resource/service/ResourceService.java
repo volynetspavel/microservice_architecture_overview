@@ -7,7 +7,6 @@ import com.microservice.resource.entity.Resource;
 import com.microservice.resource.exception.InvalidRequestException;
 import com.microservice.resource.exception.ResourceNotFoundException;
 import com.microservice.resource.repository.ResourceRepository;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,7 +17,6 @@ import java.util.Map;
 /**
  * Service for handling MP3 resource CRUD operations.
  */
-@Slf4j
 @Service
 public class ResourceService {
 
@@ -47,21 +45,12 @@ public class ResourceService {
 
         // Save resource to database
         Resource resource = repository.save(new Resource(audioData));
-        log.info("Resource with ID={} saved successfully", resource.getId());
 
-        try {
-            // Extract metadata from MP3 file
-            Map<String, String> metadata = metadataExtractor.extractMetadata(resource.getId(), audioData);
-            log.info("Metadata extracted for resource ID={}", resource.getId());
+        // Extract metadata from MP3 file
+        Map<String, String> metadata = metadataExtractor.extractMetadata(resource.getId(), audioData);
 
-            // Send metadata to Song Service
-            songServiceClient.sendMetadata(metadata);
-            log.info("Metadata sent to Song Service for resource ID={}", resource.getId());
-        } catch (Exception e) {
-            // Log error but don't fail the upload - resource is already saved
-            log.error("Error processing metadata for resource ID={}: {}", resource.getId(), e.getMessage());
-        }
-
+        // Send metadata to Song Service
+        songServiceClient.sendMetadata(metadata);
         return new ResourceIdResponseDto(resource.getId());
     }
 
@@ -94,7 +83,6 @@ public class ResourceService {
                 repository.deleteById(id);
                 songServiceClient.deleteMetadata(id);
                 deletedIds.add(id);
-                log.info("Resource with ID={} deleted successfully", id);
             }
         }
 

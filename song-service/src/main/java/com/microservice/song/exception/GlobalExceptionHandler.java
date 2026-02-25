@@ -1,11 +1,17 @@
 package com.microservice.song.exception;
 
 import com.microservice.song.dto.ErrorResponseDto;
+import com.microservice.song.dto.ValidationErrorResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Global exception handler for song service exceptions.
@@ -20,15 +26,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleNotFound(SongNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponseDto(String.valueOf(HttpStatus.NOT_FOUND.value()), ex.getMessage()));
-    }
-
-    /**
-     * Handles invalid request exceptions, such as missing required fields or invalid data formats.
-     */
-    @ExceptionHandler(InvalidRequestException.class)
-    public ResponseEntity<ErrorResponseDto> handleBadRequest(InvalidRequestException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponseDto(String.valueOf(HttpStatus.BAD_REQUEST.value()), ex.getMessage()));
     }
 
     /**
@@ -58,22 +55,47 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponseDto(String.valueOf(HttpStatus.BAD_REQUEST.value()),
                         "Invalid file format: " + ex.getContentType() + ". Only MP3 files are allowed"));
     }
-//
-//    /**
-//     * Handles path variable type mismatch errors.
-//     */
-//    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-//    public ResponseEntity<ErrorResponseDto> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-//        String paramName = ex.getName();
-//        String requiredType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown";
-//        String numberSign = requiredType.equals("Long") ? "positive " : "";
-//        String value = ex.getValue() != null ? ex.getValue().toString() : "null";
-//        String message = String.format(
-//                "Invalid value '%s' for '%s'. Must be a %s%s.",
-//                value, paramName, numberSign, requiredType
-//        );
-//        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponseDto(HttpStatus.BAD_REQUEST.value(),
-//                message));
-//    }
+
+    /**
+     * Handles validation errors for method arguments, such as invalid field values in the request body.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ValidationErrorResponseDto> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> details = new LinkedHashMap<>();
+
+        // Group errors by field
+        Map<String, FieldError> otherErrors = new LinkedHashMap<>();
+        Map<String, FieldError> notBlankErrors = new LinkedHashMap<>();
+
+        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+            String field = error.getField();
+            String code = error.getCode(); // e.g., "NotBlank", "Size", etc.
+
+            if ("Size".equals(code) || "Pattern".equals(code)) {
+                otherErrors.put(field, error);
+            } else {
+                notBlankErrors.put(field, error);
+            }
+        }
+
+        // Add NotBlank errors first, then other errors
+        otherErrors.forEach((field, error) -> details.putIfAbsent(field, error.getDefaultMessage()));
+        notBlankErrors.forEach((field, error) -> details.putIfAbsent(field, error.getDefaultMessage()));
+
+        ValidationErrorResponseDto errorResponse = new ValidationErrorResponseDto(String.valueOf(HttpStatus.BAD_REQUEST.value()),
+                "Validation error", details);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+
+    /**
+     * Handles invalid requests, such as incorrect path variables.
+     */
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ErrorResponseDto> handleBadRequest(InvalidRequestException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponseDto(String.valueOf(HttpStatus.BAD_REQUEST.value()), ex.getMessage()));
+    }
 }
 

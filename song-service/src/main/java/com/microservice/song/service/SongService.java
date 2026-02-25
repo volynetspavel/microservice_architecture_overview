@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 /**
  * Service for handling song metadata CRUD operations.
@@ -24,8 +23,6 @@ import java.util.regex.Pattern;
 public class SongService {
 
     private final SongRepository repository;
-    private static final Pattern DURATION_PATTERN = Pattern.compile("^([0-5]\\d):([0-5]\\d)$");
-    private static final int MAX_CSV_LENGTH = 200;
 
     public SongService(SongRepository repository) {
         this.repository = repository;
@@ -38,11 +35,9 @@ public class SongService {
      * @return DTO containing the ID of the created song.
      */
     public SongIdResponseDto createSong(SongCreateRequestDto requestDto) {
-        validateSongCreationRequest(requestDto);
-
         // Check if song with this ID already exists
         if (repository.existsById(requestDto.getId())) {
-            throw new SongAlreadyExistsException("Metadata for this ID already exists");
+            throw new SongAlreadyExistsException("Metadata for resource ID=" + requestDto.getId() + " already exists");
         }
 
         Song song = new Song(
@@ -79,16 +74,15 @@ public class SongService {
     /**
      * Deletes specified song metadata records by their IDs.
      *
-     * @param ids Comma-separated list of song IDs to delete.
+     * @param songIds Comma-separated list of song IDs to delete.
      * @return DTO containing the IDs of successfully deleted songs.
      */
-    public DeleteSongsResponseDto deleteSongs(String ids) {
-        validateCsvFormat(ids);
+    public DeleteSongsResponseDto deleteSongs(String songIds) {
+        validateCsvLength(songIds);
+        List<Integer> ids = parseCsvIds(songIds);
 
-        List<Integer> idList = parseAndValidateIds(ids);
         List<Integer> deletedIds = new ArrayList<>();
-
-        for (Integer id : idList) {
+        for (Integer id : ids) {
             if (repository.existsById(id)) {
                 repository.deleteById(id);
                 deletedIds.add(id);
@@ -96,44 +90,6 @@ public class SongService {
         }
 
         return new DeleteSongsResponseDto(deletedIds);
-    }
-
-    /**
-     * Validates the song creation request.
-     *
-     * @param requestDto DTO containing song metadata.
-     */
-    private void validateSongCreationRequest(SongCreateRequestDto requestDto) {
-        if (requestDto == null) {
-            throw new InvalidRequestException("Song metadata is missing");
-        }
-
-        if (requestDto.getId() <= 0) {
-            throw new InvalidRequestException("Invalid id=" + requestDto.getId() + ": Numeric, must match an existing Resource ID");
-        }
-
-        if (requestDto.getName() == null || requestDto.getName().trim().isEmpty() ||
-                requestDto.getName().isEmpty() || requestDto.getName().length() > 100) {
-            throw new InvalidRequestException("Invalid name='" + requestDto.getName() + "': 1-100 characters text");
-        }
-
-        if (requestDto.getArtist() == null || requestDto.getArtist().trim().isEmpty() ||
-                requestDto.getArtist().isEmpty() || requestDto.getArtist().length() > 100) {
-            throw new InvalidRequestException("Invalid artist='" + requestDto.getArtist() + "': 1-100 characters text");
-        }
-
-        if (requestDto.getAlbum() == null || requestDto.getAlbum().trim().isEmpty() ||
-                requestDto.getAlbum().isEmpty() || requestDto.getAlbum().length() > 100) {
-            throw new InvalidRequestException("Invalid album='" + requestDto.getAlbum() + "': 1-100 characters text");
-        }
-
-        if (requestDto.getDuration() == null || !DURATION_PATTERN.matcher(requestDto.getDuration()).matches()) {
-            throw new InvalidRequestException("Invalid duration='" + requestDto.getDuration() + "': Format mm:ss, with leading zeros");
-        }
-
-        if (requestDto.getYear() == null || !isValidYear(requestDto.getYear())) {
-            throw new InvalidRequestException("Invalid year='" + requestDto.getYear() + "': YYYY format between 1900-2099");
-        }
     }
 
     /**
@@ -146,67 +102,62 @@ public class SongService {
         try {
             parsedId = Integer.parseInt(id);
             if (parsedId <= 0) {
-                throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive long");
+                throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive integer");
             }
             return parsedId;
         } catch (NumberFormatException e) {
-            throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive long");
+            throw new InvalidRequestException("Invalid value '" + id + "' for ID. Must be a positive integer");
         }
     }
 
     /**
-     * Validates the CSV format and length.
+     * Validates if the CSV string length is within acceptable limits.
      *
-     * @param ids Comma-separated list of IDs.
+     * @param resourceIds CSV string of IDs.
+     * @throws InvalidRequestException if CSV string is too long.
      */
-    private void validateCsvFormat(String ids) {
-        if (ids == null || ids.trim().isEmpty()) {
-            throw new InvalidRequestException("CSV string format is invalid or exceeds length restrictions");
+    private void validateCsvLength(String resourceIds) {
+        if (resourceIds == null || resourceIds.isEmpty()) {
+            throw new InvalidRequestException("CSV string cannot be empty");
         }
-
-        if (ids.length() > MAX_CSV_LENGTH) {
-            throw new InvalidRequestException("CSV string format is invalid or exceeds length restrictions");
+        if (resourceIds.length() > 200) {
+            throw new InvalidRequestException("CSV string is too long: received " + resourceIds.length() + " characters, maximum allowed is 200");
         }
     }
 
     /**
-     * Parses and validates comma-separated IDs.
+     * Parses comma-separated string of IDs into a list of Longs.
      *
-     * @param ids Comma-separated list of IDs.
+     * @param resourceIds CSV string of IDs.
      * @return List of parsed IDs.
+     * @throws InvalidRequestException if IDs cannot be parsed.
      */
-    private List<Integer> parseAndValidateIds(String ids) {
-        List<Integer> idList = new ArrayList<>();
-        String[] idStrings = ids.split(",");
+    private List<Integer> parseCsvIds(String resourceIds) {
+        List<String> stringIds = Arrays.stream(resourceIds.split(","))
+                .map(String::trim)
+                .toList();
 
-        for (String idStr : idStrings) {
-            try {
-                int id = Integer.parseInt(idStr.trim());
-                if (id <= 0) {
-                    throw new InvalidRequestException("CSV string format is invalid or exceeds length restrictions");
-                }
-                idList.add(id);
-            } catch (NumberFormatException e) {
-                throw new InvalidRequestException("CSV string format is invalid or exceeds length restrictions");
-            }
+        try {
+            return stringIds.stream()
+                    .peek(this::validateCsvFormat)
+                    .map(Integer::parseInt)
+                    .toList();
+        } catch (NumberFormatException e) {
+            throw new InvalidRequestException("Invalid IDs in the provided CSV string");
         }
-
-        return idList;
     }
 
-    /**
-     * Validates if the year is in YYYY format between 1900-2099.
-     *
-     * @param year The year string to validate.
-     * @return true if valid, false otherwise.
-     */
-    private boolean isValidYear(String year) {
-        if (year == null || !year.matches("^[12]\\d{3}$")) {
-            return false;
-        }
 
-        int yearInt = Integer.parseInt(year);
-        return yearInt >= 1900 && yearInt <= 2099;
+    /**
+     * Validates CSV format.
+     *
+     * @param resourceIds CSV string of IDs.
+     * @throws InvalidRequestException if CSV format is invalid.
+     */
+    private void validateCsvFormat(String resourceIds) {
+        if (!resourceIds.matches("^\\d+(?:,\\s*\\d+)*$")) {
+            throw new InvalidRequestException("Invalid ID format: '" + resourceIds + "'. Only positive integers are allowed");
+        }
     }
 }
 
