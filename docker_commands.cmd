@@ -1,5 +1,8 @@
 rem --run containers from compose.yaml
 docker compose up -d
+docker compose up -d --build
+rem --run specific services from compose.yaml
+docker compose up -d resource-db song-db
 
 rem --build images: 
 docker build -t resource-service:1.0 .
