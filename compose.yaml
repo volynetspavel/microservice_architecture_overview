@@ -23,9 +23,12 @@ services:
       
 networks:
   resource-network:
+    name: resource-network
     driver: bridge  
   song-network:
-    driver: bridge      
+    name: song-networks
+    driver: bridge 
+    
 
 # Related settings for application.properties:
 # 
